@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Карта в дело</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead__eyebrow">Пушкинская карта · Казань</div>
+    <h1>Карта в дело</h1>
+    <p class="masthead__tag">Найди, куда сходить, пока баллы не сгорели.</p>
+  </header>
+
+  <section class="balance">
+    <div>
+      <span class="balance__label">Остаток баллов</span>
+      <span class="balance__value" id="balanceValue">5000 ₽</span>
+    </div>
+    <button class="balance__edit" id="editBalance">Изменить</button>
+  </section>
+
+  <section class="filters">
+    <select id="categoryFilter">
+      <option value="">Все форматы</option>
+      <option value="museum">Музеи и выставки</option>
+      <option value="theatre">Театр</option>
+      <option value="concert">Концерты</option>
+      <option value="workshop">Мастер-классы</option>
+      <option value="cinema">Кино</option>
+      <option value="excursion">Экскурсии</option>
+    </select>
+    <input type="number" id="priceFilter" placeholder="Макс. цена, ₽" />
+    <input type="search" id="searchFilter" placeholder="Поиск по названию…" />
+  </section>
+
+  <main id="catalog" class="catalog"></main>
+
+  <template id="cardTemplate">
+    <article class="card">
+      <div class="card__date"></div>
+      <h2 class="card__title"></h2>
+      <p class="card__meta"></p>
+      <p class="card__desc"></p>
+      <div class="card__tags"></div>
+      <div class="card__footer">
+        <span class="card__price"></span>
+        <button class="card__save">Сохранить</button>
+      </div>
+    </article>
+  </template>
+
+  <footer class="disclaimer">
+    Данные о мероприятиях — тестовые, для демонстрации сценария (реальная интеграция с оператором Пушкинской карты не подключена).
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
