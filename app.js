@@ -23,6 +23,88 @@ const els = {
   template: document.getElementById('cardTemplate'),
 };
 
+function base64UrlDecode(str) {
+  try {
+    const pad = str.length % 4 === 0 ? '' : '='.repeat(4 - (str.length % 4));
+    const base64 = str.replace(/-/g, '+').replace(/_/g, '/') + pad;
+    return decodeURIComponent(escape(atob(base64)));
+  } catch (err) {
+    return null;
+  }
+}
+
+// The bot encodes onboarding settings (balance, interests, city) into a
+// base64url payload and attaches it to the "Открыть каталог" button — as a
+// `?start=` query param when opened as a plain link, or via the open_app
+// button's `payload` field when opened as a native Mini App (the exact key
+// MAX exposes that under in window.WebApp.initData isn't confirmed, so a
+// few likely candidates are tried here).
+function getStartSettings() {
+  const candidates = [];
+
+  const params = new URLSearchParams(window.location.search);
+  ['start', 'startapp', 'payload'].forEach((key) => {
+    const value = params.get(key);
+    if (value) candidates.push(value);
+  });
+
+  if (window.WebApp && window.WebApp.initData) {
+    const initParams = new URLSearchParams(window.WebApp.initData);
+    ['start_param', 'startapp', 'payload'].forEach((key) => {
+      const value = initParams.get(key);
+      if (value) candidates.push(value);
+    });
+  }
+
+  for (const raw of candidates) {
+    const decoded = base64UrlDecode(raw);
+    if (!decoded) continue;
+    try {
+      return JSON.parse(decoded);
+    } catch (err) {
+      // not valid JSON — try the next candidate instead of failing outright
+    }
+  }
+  return null;
+}
+
+function applyStartSettings() {
+  const settings = getStartSettings();
+  if (!settings) return;
+
+  if (typeof settings.balance === 'number') {
+    state.balance = settings.balance;
+  }
+
+  if (Array.isArray(settings.interests) && settings.interests.length > 0) {
+    const keywordToCategory = {
+      музе: 'museum',
+      выставк: 'museum',
+      театр: 'theatre',
+      спектакл: 'theatre',
+      концерт: 'concert',
+      музык: 'concert',
+      джаз: 'concert',
+      'мастер-класс': 'workshop',
+      'мастер класс': 'workshop',
+      'своими руками': 'workshop',
+      кино: 'cinema',
+      фильм: 'cinema',
+      экскурси: 'excursion',
+      прогулк: 'excursion',
+    };
+    const firstMatch = settings.interests
+      .map((interest) => {
+        const hit = Object.entries(keywordToCategory).find(([kw]) => interest.includes(kw));
+        return hit ? hit[1] : null;
+      })
+      .find(Boolean);
+    if (firstMatch) {
+      els.categoryFilter.value = firstMatch;
+    }
+  }
+}
+
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
@@ -102,5 +184,16 @@ els.editBalance.addEventListener('click', () => {
   el.addEventListener('input', render)
 );
 
+// If opened as a real MAX Mini App, window.WebApp will exist — tell MAX
+// the page is ready. Outside MAX (plain browser) this is just skipped.
+if (window.WebApp && typeof window.WebApp.ready === 'function') {
+  try {
+    window.WebApp.ready();
+  } catch (err) {
+    console.warn('MAX WebApp.ready() failed (probably fine outside MAX):', err);
+  }
+}
+
+applyStartSettings();
 updateBalanceDisplay();
 loadEvents();
